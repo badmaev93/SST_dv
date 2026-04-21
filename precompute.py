@@ -426,6 +426,7 @@ print(f"  anom_vm: P99={anom_vm_99:.3f}  P99.9={anom_vm_999:.3f}  P100={anom_vm_
 s7_pcts = np.percentile(all_anom, TICK_PCTS).astype(np.float32)
 
 # сохранение
+annual_years = np.unique(years)
 print("Saving to data/ …")
 
 np.savez_compressed(os.path.join(DATA_DIR, "meta.npz"),
