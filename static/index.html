@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ТПО — Северная Пацифика</title>
+
+  <link rel="stylesheet" href="/static/vendor/ol.css"/>
+  <script src="/static/vendor/ol.js"></script>
+  <script src="/static/vendor/chart.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ══ OL MAP (always in DOM) ══ -->
+<div id="map"></div>
+<!-- Map loading indicator — shown while a new PNG tile is fetching -->
+<div id="map-loading" class="hidden">
+  <div class="map-spinner"></div>
+</div>
+
+<!-- ══ COMPARE VIEW (default) ══ -->
+<div id="compare-view">
+
+  <!-- Scientific figure-caption style header -->
+  <div id="cmp-header">
+    <div class="cmp-hdr-title-row">
+      <span class="cmp-hdr-dataset">ТПО Северной Пацифики</span>
+      <span class="cmp-hdr-bullet">—</span>
+      <select id="cmp-param-select" class="cmp-hdr-sel cmp-hdr-param" onchange="setCmpSection(this.value)">
+        <option value="s7">Аномалии</option>
+        <option value="s1">Клим. среднее</option>
+        <option value="s2">Тренд</option>
+        <option value="s3">Детерм.</option>
+        <option value="s4">Дисперсия</option>
+        <option value="s5">Тр. дисп.</option>
+      </select>
+      <!-- Year combobox — only for s7 -->
+      <span id="cmp-year-wrap" class="cmp-hdr-year-wrap hidden">
+        <span class="cmp-hdr-bullet">(</span>
+        <select id="cmp-year-select" class="cmp-hdr-sel cmp-hdr-year" onchange="setCmpYear(this.value)"></select>
+        <span class="cmp-hdr-bullet">)</span>
+      </span>
+    </div>
+    <div class="cmp-hdr-meta-row">
+      <span class="cmp-hdr-key">Климат:</span>
+      <select id="cmp-clim-select" class="cmp-hdr-sel cmp-hdr-clim" onchange="setClim(this.value)">
+        <option value="1981_2010">1981–2010</option>
+        <option value="1991_2020" selected>1991–2020</option>
+        <option value="1980_2026">1980–2026</option>
+      </select>
+      <span class="cmp-hdr-dot">·</span>
+      <span class="cmp-hdr-key">Осреднение:</span>
+      <select id="cmp-avg-select" class="cmp-hdr-sel" onchange="setAvg(this.value)">
+        <option value="monthly">по месяцам</option>
+        <option value="ess">Е.С.С.</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Grid of small maps -->
+  <div id="compare-grid"></div>
+
+  <!-- Hint text at bottom -->
+  <div id="cmp-hint"></div>
+
+  <!-- Horizontal legend (same bands as vertical, rotated) -->
+  <div id="cmp-legend-h" class="hidden"></div>
+
+</div>
+
+<!-- ══ BOTTOM BAR — detail mode, s7 ══ -->
+<div id="bottom-bar" style="display:none">
+  <div id="timeline">
+    <div id="tl-top">
+      <div class="tl-btns">
+        <button class="tl-btn" onclick="stepYear(-1)">◀◀</button>
+        <button class="tl-btn" id="play-btn" onclick="togglePlay()">▶</button>
+        <button class="tl-btn" onclick="stepYear(1)">▶▶</button>
+      </div>
+      <span id="year-label" class="year-label">Выберите год</span>
+    </div>
+    <div id="tl-slider-wrap">
+      <input type="range" id="year-slider" min="0" max="0" value="0"
+             oninput="onYearSlider(this.value)"/>
+      <div id="year-ticks"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HAMBURGER TOGGLE (always visible) ══ -->
+<button id="panel-toggle" onclick="togglePanel()">
+  <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <line x1="0" y1="1"  x2="18" y2="1"/>
+    <line x1="0" y1="7"  x2="18" y2="7"/>
+    <line x1="0" y1="13" x2="18" y2="13"/>
+  </svg>
+</button>
+
+<!-- ══ BACK BUTTON — detail mode only, next to hamburger ══ -->
+<button id="back-btn" style="display:none" onclick="goCompare()">← Обзор</button>
+
+<!-- ══ LEFT PANEL ══ -->
+<div id="left-panel">
+
+  <!-- Parameter icon buttons -->
+  <div class="lp-group">
+    <div class="lp-lbl">Параметр</div>
+    <div id="param-btns">
+      <button class="param-btn active" data-section="s7">
+        <div class="pb-circle">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
+            <polygon points="11,3 20,19 2,19"/>
+            <line x1="11" y1="9" x2="11" y2="14"/>
+            <circle cx="11" cy="16.5" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <span class="pb-label">Аномалии</span>
+      </button>
+      <button class="param-btn" data-section="s1">
+        <div class="pb-circle">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <line x1="4" y1="7" x2="18" y2="7"/>
+            <line x1="4" y1="11" x2="18" y2="11"/>
+            <line x1="4" y1="15" x2="13" y2="15"/>
+          </svg>
+        </div>
+        <span class="pb-label">Клим. среднее</span>
+      </button>
+      <button class="param-btn" data-section="s2">
+        <div class="pb-circle">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3,17 9,10 14,13 19,5"/>
+            <polyline points="14,5 19,5 19,10"/>
+          </svg>
+        </div>
+        <span class="pb-label">Тренд</span>
+      </button>
+      <button class="param-btn" data-section="s3">
+        <div class="pb-circle">
+          <svg width="20" height="20" viewBox="0 0 22 22">
+            <text x="2" y="15" font-family="monospace" font-size="11" font-weight="bold" fill="currentColor">R²</text>
+          </svg>
+        </div>
+        <span class="pb-label">Детерм.</span>
+      </button>
+      <button class="param-btn" data-section="s4">
+        <div class="pb-circle">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M2,11 C5,6 8,16 11,11 C14,6 17,16 20,11"/>
+          </svg>
+        </div>
+        <span class="pb-label">Дисперсия</span>
+      </button>
+      <button class="param-btn" data-section="s5">
+        <div class="pb-circle">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-linecap="round">
+            <path d="M2,13 C5,8 8,18 11,13 C14,8 17,18 20,13" stroke-width="1.8"/>
+            <line x1="3" y1="19" x2="19" y2="5" stroke-width="1.2" stroke-dasharray="3,2"/>
+          </svg>
+        </div>
+        <span class="pb-label">Тр. дисп.</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Климат -->
+  <div class="lp-group">
+    <div class="lp-lbl">Климат</div>
+    <select id="clim-select" class="lp-select" onchange="setClim(this.value)">
+      <option value="1981_2010">1981–2010</option>
+      <option value="1991_2020" selected>1991–2020</option>
+      <option value="1980_2026">1980–2026</option>
+    </select>
+  </div>
+
+  <!-- Осреднение -->
+  <div class="lp-group">
+    <div class="lp-lbl">Осреднение</div>
+    <select id="avg-select" class="lp-select" onchange="setAvg(this.value)">
+      <option value="monthly">Месяц</option>
+      <option value="ess">Е.С.С.</option>
+    </select>
+  </div>
+
+  <!-- Period buttons -->
+  <div id="period-box">
+    <div class="period-label" id="period-label">Месяц</div>
+    <div id="period-btns"></div>
+  </div>
+
+  <!-- Settings (collapsible) -->
+  <div class="lp-section" id="lp-settings">
+    <button class="lp-section-hdr" onclick="toggleLpSection('lp-settings')">
+      <span>Настройки</span>
+      <svg class="lp-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M2 3.5 L5 7 L8 3.5"/>
+      </svg>
+    </button>
+    <div class="lp-section-body">
+      <div class="lp-row">
+        <span class="lp-lbl">Береговая линия</span>
+        <div class="lp-btns">
+          <button class="lp-btn coast-btn active" data-coast="1" onclick="setCoastline(true)">Вкл</button>
+          <button class="lp-btn coast-btn"        data-coast="0" onclick="setCoastline(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Размытие</span>
+        <div class="lp-btns">
+          <button class="lp-btn blur-btn"        data-blur="1" onclick="setBlur(true)">Вкл</button>
+          <button class="lp-btn blur-btn active" data-blur="0" onclick="setBlur(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Перцентиль</span>
+        <div class="lp-btns">
+          <button class="lp-btn pct-btn active" data-pct="99"   onclick="setPct('99')">99</button>
+          <button class="lp-btn pct-btn"        data-pct="99.9" onclick="setPct('99.9')">99.9</button>
+          <button class="lp-btn pct-btn"        data-pct="100"  onclick="setPct('100')">100</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Разрешение PNG</span>
+        <div class="lp-btns">
+          <button class="lp-btn scale-btn"        data-scale="1" onclick="setScale(1)">1×</button>
+          <button class="lp-btn scale-btn active" data-scale="2" onclick="setScale(2)">2×</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Изолинии</span>
+        <div class="lp-btns">
+          <button class="lp-btn contour-btn active" data-contour="1" onclick="setContours(true)">Вкл</button>
+          <button class="lp-btn contour-btn"        data-contour="0" onclick="setContours(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Подписи изолиний</span>
+        <div class="lp-btns">
+          <button class="lp-btn contlbl-btn active" data-contlbl="1" onclick="setContourLabels(true)">Вкл</button>
+          <button class="lp-btn contlbl-btn"        data-contlbl="0" onclick="setContourLabels(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Интерполяция</span>
+        <div class="lp-btns">
+          <button class="lp-btn smooth-btn active" data-smooth="1" onclick="setSmooth(true)">Вкл</button>
+          <button class="lp-btn smooth-btn"        data-smooth="0" onclick="setSmooth(false)">Выкл</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ RIGHT LEGEND (both modes) ══ -->
+<div id="legend">
+  <div id="legend-unit"></div>
+  <div id="legend-body">
+    <canvas id="legend-canvas" width="64" height="320"></canvas>
+    <div id="legend-ticks-wrap"><div id="legend-ticks"></div></div>
+  </div>
+</div>
+
+<!-- Hover tooltip -->
+<div id="hover-tooltip" class="hidden"></div>
+
+<!-- Map popup -->
+<div id="map-popup" class="ol-popup" style="display:none">
+  <div id="map-popup-content"></div>
+</div>
+
+<!-- Timeseries panel -->
+<div id="dashboard" class="hidden">
+  <div class="db-header">
+    <span id="db-title"></span>
+    <button class="db-close" onclick="closeDashboard()">✕</button>
+  </div>
+  <div class="db-body" id="db-body"></div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="hidden">
+  <div class="spinner"></div>
+  <div id="loading-text">Загрузка…</div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
