@@ -1,0 +1,2 @@
+web: gunicorn app:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+release: python prepare_data.py --skip-download

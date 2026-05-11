@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ERA5 ДВ — Северная Пацифика</title>
+  <meta name="description" content="Интерактивный дашборд ERA5: температура поверхности океана и воздуха (1979–2026), Северная Пацифика"/>
+  <link rel="icon" type="image/png" href="/assets/logo.png"/>
+
+  <link rel="stylesheet" href="/static/vendor/ol.css"/>
+  <script src="/static/vendor/ol.js"></script>
+  <script src="/static/vendor/chart.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header id="cmp-header">
+  <div class="cmp-hdr-left">
+
+    <!-- Back button (detail mode only) -->
+    <button id="hdr-back-btn" class="hidden" onclick="goCompare()" aria-label="Вернуться к обзору">
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 1.5L3.5 5.5L7 9.5"/>
+      </svg>
+      Обзор
+    </button>
+
+    <!-- Title row: Dataset · Param · Year -->
+    <div class="cmp-hdr-title-row">
+      <select id="cmp-var-select" class="cmp-hdr-sel cmp-hdr-dataset" onchange="setVariable(this.value)" aria-label="Набор данных">
+        <option value="sst">ТПО Северной Пацифики</option>
+        <option value="t2m" selected>Температура воздуха (2 м)</option>
+      </select>
+      <span class="cmp-hdr-slash" aria-hidden="true">/</span>
+      <select id="cmp-param-select" class="cmp-hdr-sel cmp-hdr-param" onchange="setCmpSection(this.value)" aria-label="Параметр">
+        <option value="s7">Аномалии</option>
+        <option value="s1">Клим. среднее</option>
+        <option value="s2">Тренд</option>
+        <option value="s3">Детерм.</option>
+        <option value="s4">Дисперсия</option>
+        <option value="s5">Тр. дисп.</option>
+      </select>
+      <!-- Year badge — only for s7 -->
+      <span id="cmp-year-wrap" class="cmp-hdr-year-wrap hidden" aria-label="Год аномалии">
+        <select id="cmp-year-select" class="cmp-hdr-sel cmp-hdr-year" onchange="setCmpYear(this.value)"></select>
+      </span>
+    </div>
+
+    <!-- Meta row: Климат & Осреднение -->
+    <div class="cmp-hdr-meta-row">
+      <span class="cmp-meta-unit">
+        <span class="cmp-meta-lbl">Климат</span>
+        <select id="cmp-clim-select" class="cmp-hdr-sel cmp-hdr-clim" onchange="setClim(this.value)">
+          <option value="1981_2010">1981–2010</option>
+          <option value="1991_2020" selected>1991–2020</option>
+          <option value="1980_2026">1980–2026</option>
+        </select>
+      </span>
+      <span class="cmp-meta-dot" aria-hidden="true">·</span>
+      <span class="cmp-meta-unit">
+        <span class="cmp-meta-lbl">Осреднение</span>
+        <select id="cmp-avg-select" class="cmp-hdr-sel cmp-hdr-avg" onchange="setAvg(this.value)">
+          <option value="monthly">по месяцам</option>
+          <option value="ess" selected>Е.С.С.</option>
+        </select>
+      </span>
+    </div>
+
+  </div>
+
+  <!-- Right: Invite button -->
+  <div class="cmp-hdr-right">
+    <button id="invite-btn" class="cmp-hdr-invite" onclick="openInvite()" aria-label="Пригласить пользователя">
+      <svg class="invite-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="5" cy="4" r="3"/>
+        <path d="M0.5 13C0.5 9.5 9.5 9.5 9.5 13"/>
+        <path d="M13 5v5M10.5 7.5h5"/>
+      </svg>
+      <span>Пригласить</span>
+    </button>
+  </div>
+</header>
+
+<!-- Period selector bar — detail mode, top-right under header -->
+<div id="period-select-bar" class="hidden">
+  <span class="period-bar-lbl">Период</span>
+  <select id="cmp-period-select" class="cmp-hdr-sel" onchange="setCmpPeriod(this.value)"></select>
+</div>
+
+<!-- ══ OL MAP ══ -->
+<div id="map" role="application" aria-label="Интерактивная карта"></div>
+
+<!-- Map loading indicator -->
+<div id="map-loading" class="hidden" role="status" aria-label="Загрузка карты">
+  <div class="map-spinner"></div>
+</div>
+
+<!-- ══ COMPARE VIEW (default) ══ -->
+<div id="compare-view">
+  <div id="compare-grid"></div>
+  <div id="cmp-hint" aria-live="polite"></div>
+  <div id="cmp-legend-h" class="hidden"></div>
+</div>
+
+<!-- ══ HAMBURGER TOGGLE ══ -->
+<button id="panel-toggle" onclick="togglePanel()" aria-label="Открыть/закрыть панель настроек">
+  <svg width="17" height="13" viewBox="0 0 17 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+    <line x1="0" y1="1"  x2="17" y2="1"/>
+    <line x1="0" y1="6.5" x2="17" y2="6.5"/>
+    <line x1="0" y1="12" x2="17" y2="12"/>
+  </svg>
+</button>
+
+<!-- ══ LEFT PANEL ══ -->
+<aside id="left-panel" aria-label="Панель настроек">
+
+  <!-- Period buttons -->
+  <div id="period-box">
+    <div class="period-label" id="period-label">Месяц</div>
+    <div id="period-btns" role="group" aria-label="Выбор периода"></div>
+  </div>
+
+  <!-- Settings (expanded by default) -->
+  <div class="lp-section open" id="lp-settings">
+    <button class="lp-section-hdr" onclick="toggleLpSection('lp-settings')" aria-expanded="true">
+      <span>Настройки отображения</span>
+      <svg class="lp-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path d="M2 3.5L5 7L8 3.5"/>
+      </svg>
+    </button>
+    <div class="lp-section-body">
+
+      <div class="lp-row">
+        <span class="lp-lbl">Береговая линия</span>
+        <div class="lp-btns">
+          <button class="lp-btn coast-btn active" data-coast="1" onclick="setCoastline(true)">Вкл</button>
+          <button class="lp-btn coast-btn"        data-coast="0" onclick="setCoastline(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Размытие</span>
+        <div class="lp-btns">
+          <button class="lp-btn blur-btn"        data-blur="1" onclick="setBlur(true)">Вкл</button>
+          <button class="lp-btn blur-btn active" data-blur="0" onclick="setBlur(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Перцентиль</span>
+        <div class="lp-btns">
+          <button class="lp-btn pct-btn active" data-pct="99"   onclick="setPct('99')">99</button>
+          <button class="lp-btn pct-btn"        data-pct="99.9" onclick="setPct('99.9')">99.9</button>
+          <button class="lp-btn pct-btn"        data-pct="100"  onclick="setPct('100')">100</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Разрешение PNG</span>
+        <div class="lp-btns">
+          <button class="lp-btn scale-btn"        data-scale="1" onclick="setScale(1)">1×</button>
+          <button class="lp-btn scale-btn active" data-scale="2" onclick="setScale(2)">2×</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Изолинии</span>
+        <div class="lp-btns">
+          <button class="lp-btn contour-btn active" data-contour="1" onclick="setContours(true)">Вкл</button>
+          <button class="lp-btn contour-btn"        data-contour="0" onclick="setContours(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Подписи изолиний</span>
+        <div class="lp-btns">
+          <button class="lp-btn contlbl-btn"        data-contlbl="1" onclick="setContourLabels(true)">Вкл</button>
+          <button class="lp-btn contlbl-btn active" data-contlbl="0" onclick="setContourLabels(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Интерполяция</span>
+        <div class="lp-btns">
+          <button class="lp-btn smooth-btn"        data-smooth="1" onclick="setSmooth(true)">Вкл</button>
+          <button class="lp-btn smooth-btn active" data-smooth="0" onclick="setSmooth(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Гратикль</span>
+        <div class="lp-btns">
+          <button class="lp-btn grat-btn active" data-grat="1" onclick="setGraticule(true)">Вкл</button>
+          <button class="lp-btn grat-btn"        data-grat="0" onclick="setGraticule(false)">Выкл</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</aside>
+
+<!-- ══ RIGHT LEGEND ══ -->
+<div id="legend" aria-label="Цветовая шкала">
+  <div id="legend-unit"></div>
+  <div id="legend-body">
+    <canvas id="legend-canvas" width="64" height="320"></canvas>
+    <div id="legend-ticks-wrap"><div id="legend-ticks"></div></div>
+  </div>
+</div>
+
+<!-- Hover tooltip -->
+<div id="hover-tooltip" class="hidden" role="tooltip"></div>
+
+<!-- Map popup -->
+<div id="map-popup" class="ol-popup" style="display:none" role="dialog" aria-label="Значение точки">
+  <div id="map-popup-content"></div>
+  <button class="popup-close" id="popup-close-btn" title="Закрыть" aria-label="Закрыть">
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+      <path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Timeseries dashboard panel -->
+<div id="dashboard" class="hidden" role="complementary" aria-label="Временной ряд">
+  <div class="db-header">
+    <span id="db-title"></span>
+    <button class="db-close" onclick="closeDashboard()" aria-label="Закрыть панель">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+        <path d="M2 2l8 8M10 2l-8 8"/>
+      </svg>
+    </button>
+  </div>
+  <div class="db-body" id="db-body"></div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="hidden" role="status" aria-label="Загрузка">
+  <div class="spinner"></div>
+  <div id="loading-text">Загрузка…</div>
+</div>
+
+<!-- ══ INVITE OVERLAY ══ -->
+<div id="invite-overlay" class="hidden" role="dialog" aria-modal="true" aria-label="Пригласить пользователя">
+  <div class="auth-box invite-box">
+    <div class="invite-box-header">
+      <div class="invite-box-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6.5" cy="5" r="3.5"/>
+          <path d="M0.5 15.5C0.5 11 12.5 11 12.5 15.5"/>
+          <path d="M16 6v6M13 9h6"/>
+        </svg>
+      </div>
+      <div>
+        <div class="invite-box-title">Пригласить пользователя</div>
+        <div class="invite-box-sub">Приглашение действует 7 дней</div>
+      </div>
+    </div>
+    <form id="invite-form" onsubmit="inviteSubmit(event)">
+      <div class="auth-field">
+        <label for="invite-email">Email пользователя</label>
+        <input id="invite-email" type="email" required placeholder="user@example.com" autocomplete="email"/>
+      </div>
+      <div id="invite-error"   class="auth-error   hidden"></div>
+      <div id="invite-success" class="invite-success hidden"></div>
+      <button type="submit" id="invite-submit-btn">Отправить приглашение</button>
+      <button type="button" class="invite-cancel-btn" onclick="closeInvite()">Отмена</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══ AUTH OVERLAY ══ -->
+<div id="auth-overlay" class="hidden" role="dialog" aria-modal="true" aria-label="Вход в систему">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <img class="auth-logo-img" src="/assets/logo.png" alt="ERA5 ДВ логотип"/>
+      <div class="auth-logo">ERA5 ДВ</div>
+      <div class="auth-tagline">Северная Пацифика · 1979–2026</div>
+    </div>
+    <form id="auth-form" onsubmit="authSubmit(event)">
+      <div class="auth-field">
+        <label for="auth-email">Email</label>
+        <input id="auth-email" type="email" autocomplete="username" required placeholder="you@example.com"/>
+      </div>
+      <div class="auth-field">
+        <label for="auth-pass">Пароль</label>
+        <input id="auth-pass" type="password" autocomplete="current-password" required/>
+      </div>
+      <div id="auth-error" class="auth-error hidden" role="alert"></div>
+      <button type="submit" id="auth-btn">Войти</button>
+    </form>
+  </div>
+</div>
+
+<!-- Mobile bottom bar: period-box teleported here by JS on narrow viewports -->
+<div id="mob-bottom"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

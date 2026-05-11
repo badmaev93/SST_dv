@@ -1,0 +1,56 @@
+.DS_Store
+.AppleDouble
+**/.DS_Store
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Data (тяжёлые файлы)
+data/
+
+.backup_*.tar.gz
+*.tar.gz
+
+*.log
+logs/
+
+.claude/
+graphify-out/
+.env
+.env.*
+!.env.example
+
+vps
+vps.pub
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Дистрибутивы
+dist/
+
+# Electron
+electron/node_modules/
+electron/dist/
+electron/.webpack/
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+
+.*
+!.gitignore
+!.dockerignore
+data/*.npz
+data/*.npz

@@ -1,0 +1,22 @@
+[Unit]
+Description=ERA5 ДВ
+After=network.target
+
+[Service]
+Type=exec
+User=sst
+Group=sst
+WorkingDirectory=/opt/sst-dashboard
+EnvironmentFile=/opt/sst-dashboard/.env
+ExecStart=/opt/sst-dashboard/venv/bin/gunicorn app:app \
+    -k uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000 \
+    --workers 1 \
+    --timeout 120 \
+    --access-logfile /opt/sst-dashboard/logs/access.log \
+    --error-logfile  /opt/sst-dashboard/logs/error.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

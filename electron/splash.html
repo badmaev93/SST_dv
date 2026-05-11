@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SST Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: #0f1923;
+      color: #cdd6f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: 18px;
+      user-select: none;
+      -webkit-app-region: drag;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #cdd6f4;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #585b70;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    #status {
+      font-size: 13px;
+      color: #89b4fa;
+      min-height: 1.5em;
+      text-align: center;
+    }
+    #log {
+      font-size: 11px;
+      color: #45475a;
+      font-family: 'Menlo', 'Consolas', monospace;
+      max-width: 400px;
+      text-align: center;
+      min-height: 1.4em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #313244;
+      border-top-color: #89b4fa;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <h1>SST Dashboard</h1>
+  <div class="subtitle">North Pacific · ERA5 · 1979–2026</div>
+  <div id="status">Инициализация…</div>
+  <div id="log"></div>
+  <script>
+    window.electronAPI.onStatus(msg => {
+      document.getElementById('status').textContent = msg;
+    });
+    window.electronAPI.onPrecomputeStart(() => {
+      document.getElementById('status').textContent =
+        'Вычисление данных (первый запуск, займёт несколько минут)…';
+    });
+    window.electronAPI.onPrecomputeLog(msg => {
+      document.getElementById('log').textContent = msg;
+    });
+  </script>
+</body>
+</html>

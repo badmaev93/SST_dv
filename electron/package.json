@@ -1,0 +1,48 @@
+{
+  "name": "sst-dashboard",
+  "version": "1.1.0",
+  "description": "ERA5 ДВ — температура поверхности и воздуха Северной Пацифики",
+  "main": "main.js",
+  "scripts": {
+    "start":      "electron .",
+    "build:mac":  "electron-builder --mac",
+    "build:win":  "electron-builder --win",
+    "build:linux":"electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron":         "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId":       "com.badmaev.sst-dashboard",
+    "productName": "ERA5 ДВ",
+    "directories": { "output": "dist" },
+    "files": [
+      "main.js",
+      "preload.js",
+      "assets/**"
+    ],
+    "mac": {
+      "icon": "assets/icon.png",
+      "category": "public.app-category.utilities",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ]
+    },
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] }
+      ]
+    },
+    "extraMetadata": {
+      "main": "main.js"
+    }
+  }
+}
