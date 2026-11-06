@@ -548,6 +548,20 @@ def _overlay_contours(img, vals: np.ndarray, finite: np.ndarray,
         return img
 
 
+import functools
+
+@functools.lru_cache(maxsize=16)
+def _get_mercator_grid(W: int, H: int):
+    from pyproj import Transformer
+    x_min, y_min, x_max, y_max = _MERC_EXTENT
+    xs = np.linspace(x_min, x_max, W)
+    ys = np.linspace(y_max, y_min, H)
+    X, Y = np.meshgrid(xs, ys)
+    inv = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
+    lons_grid, lats_grid = inv.transform(X, Y)
+    return lons_grid % 360.0, lats_grid
+
+
 def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray,
                      cmap: str, vmin: float, vmax: float,
                      land_mask: Optional[np.ndarray] = None,
@@ -556,21 +570,12 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
                      blur: bool = True,
                      contours: bool = True,
                      contour_labels: bool = False) -> bytes:
-    from pyproj import Transformer
     from scipy.interpolate import RegularGridInterpolator
 
     W = width  * scale
     H = height * scale
 
-    x_min, y_min, x_max, y_max = _MERC_EXTENT
-
-    xs = np.linspace(x_min, x_max, W)
-    ys = np.linspace(y_max, y_min, H)
-    X, Y = np.meshgrid(xs, ys)
-
-    inv = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
-    lons_grid, lats_grid = inv.transform(X, Y)
-    lons_grid = lons_grid % 360.0
+    lons_grid, lats_grid = _get_mercator_grid(W, H)
 
     if lat_arr[0] > lat_arr[-1]:
         lat_inc   = lat_arr[::-1]
