@@ -2000,3 +2000,25 @@ function showLoading(text) {
 function hideLoading() {
   document.getElementById("loading-overlay").classList.add("hidden");
 }
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const authOverlay = document.getElementById("auth-overlay");
+    const inviteOverlay = document.getElementById("invite-overlay");
+    const dashboard = document.getElementById("dashboard");
+    const mapPopup = document.getElementById("map-popup");
+    const leftPanel = document.getElementById("left-panel");
+
+    if (authOverlay && !authOverlay.classList.contains("hidden")) {
+      _hideLogin();
+    } else if (inviteOverlay && !inviteOverlay.classList.contains("hidden")) {
+      closeInvite();
+    } else if (dashboard && !dashboard.classList.contains("hidden")) {
+      closeDashboard();
+    } else if (mapPopup && mapPopup.style.display !== "none") {
+      _hidePopup();
+    } else if (leftPanel && leftPanel.classList.contains("panel-open")) {
+      closePanel();
+    }
+  }
+});
