@@ -67,6 +67,8 @@ async def _auth_middleware(request, call_next):
 _cache: dict = {}
 
 def _load(name: str) -> dict:
+    if name not in ALLOWED_LOAD_NAMES:
+        raise HTTPException(400, "Invalid data name requested")
     var    = current_variable()
     prefix = "" if var == "sst" else f"{var}_"
     fname  = f"{prefix}{name}" if name != "sst_raw" else (
@@ -188,6 +190,8 @@ COLORMAPS = {
 }
 
 _LUTS = {nm: _make_lut(nm) for nm in set(n for n, _ in COLORMAPS.values())}
+
+ALLOWED_LOAD_NAMES = {"meta", "sst_raw", "t2m_raw"} | set(COLORMAPS.keys())
 
 SECTIONS = [
     {"id": "s1", "label": "Климатологическое среднее ТПО",          "unit": "°C",              "symmetric": False},
