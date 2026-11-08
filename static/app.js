@@ -13,6 +13,7 @@ function _showLogin(msg) {
   if (msg) { er.textContent = msg; er.classList.remove("hidden"); }
   else      { er.classList.add("hidden"); }
   ov.classList.remove("hidden");
+  setTimeout(() => document.getElementById("auth-email").focus(), 0);
 }
 function _hideLogin() {
   document.getElementById("auth-overlay").classList.add("hidden");
@@ -34,6 +35,7 @@ function openInvite() {
   document.getElementById("invite-error").classList.add("hidden");
   document.getElementById("invite-success").classList.add("hidden");
   document.getElementById("invite-overlay").classList.remove("hidden");
+  setTimeout(() => document.getElementById("invite-email").focus(), 0);
 }
 function closeInvite() {
   document.getElementById("invite-overlay").classList.add("hidden");
@@ -1084,34 +1086,51 @@ function renderLegend(cs) {
 
 // синхронизация UI
 function syncUI() {
+  document.querySelectorAll(".lp-btn").forEach(b => b.setAttribute("aria-pressed", "false"));
   const { section, avgMode, periodIdx, percentile, climPeriod, scale, smooth, blur } = S;
 
   document.querySelectorAll(".param-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.section === section);
   });
   document.querySelectorAll(".pct-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.pct === String(percentile));
+    const isActive = b.dataset.pct === String(percentile);
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
   document.querySelectorAll(".scale-btn").forEach(b => {
-    b.classList.toggle("active", Number(b.dataset.scale) === scale);
+    const isActive = Number(b.dataset.scale) === scale;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
   document.querySelectorAll(".smooth-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.smooth === "1") === smooth);
+    const isActive = (b.dataset.smooth === "1") === smooth;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
   document.querySelectorAll(".blur-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.blur === "1") === blur);
+    const isActive = (b.dataset.blur === "1") === blur;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
   document.querySelectorAll(".coast-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.coast === "1") === S.coastline);
+    const isActive = (b.dataset.coast === "1") === S.coastline;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
   document.querySelectorAll(".contour-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contour === "1") === S.contours);
+    const isActive = (b.dataset.contour === "1") === S.contours;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
   document.querySelectorAll(".contlbl-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contlbl === "1") === S.contourLabels);
+    const isActive = (b.dataset.contlbl === "1") === S.contourLabels;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
   document.querySelectorAll(".grat-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.grat === "1") === S.graticule);
+    const isActive = (b.dataset.grat === "1") === S.graticule;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive);
   });
 
   const varSel = document.getElementById("var-select");
@@ -1134,7 +1153,9 @@ function buildPeriodButtons() {
 
   labels.forEach((lbl, i) => {
     const btn = document.createElement("button");
-    btn.className = "period-btn" + (S._periodSelected && i === periodIdx ? " active" : "");
+    const isActive = S._periodSelected && i === periodIdx;
+    btn.className = "period-btn" + (isActive ? " active" : "");
+    btn.setAttribute("aria-pressed", isActive);
     btn.textContent = lbl;
     btn.onclick = () => {
       S.periodIdx = i;
@@ -1156,7 +1177,10 @@ function buildPeriodButtons() {
 // обработчики событий
 // сворачиваемые секции левой панели
 function toggleLpSection(id) {
-  document.getElementById(id).classList.toggle("open");
+  const el = document.getElementById(id);
+  const isOpen = el.classList.toggle("open");
+  const hdr = el.querySelector(".lp-section-hdr");
+  if (hdr) hdr.setAttribute("aria-expanded", isOpen);
 }
 
 function setAvg(mode) {
@@ -1928,8 +1952,9 @@ function _buildAnnualWidget(parent, section, clickData, _sec) {
   const allBtns = [];
   const makeBtn = (label, isActive, onClick) => {
     const b = _el("button", "db-mo-btn" + (isActive ? " active" : ""));
+    b.setAttribute("aria-pressed", isActive);
     b.textContent = label;
-    b.onclick = () => { allBtns.forEach(x => x.classList.remove("active")); b.classList.add("active"); onClick(); };
+    b.onclick = () => { allBtns.forEach(x => { x.classList.remove("active"); x.setAttribute("aria-pressed", "false"); }); b.classList.add("active"); b.setAttribute("aria-pressed", "true"); onClick(); };
     allBtns.push(b);
     selectorDiv.appendChild(b);
     return b;
