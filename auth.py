@@ -177,7 +177,8 @@ def login(req: LoginReq, request: Request):
 
 
 @router.post("/invite")
-def invite(req: InviteReq, _user=Depends(get_current_user)):
+def invite(req: InviteReq, _admin=Depends(require_admin)):
+    # SECURITY: Restrict invites to admins only to prevent unauthorized account creation
     if _get_user(req.email):
         raise HTTPException(400, "Пользователь уже существует")
     password = _gen_password()
