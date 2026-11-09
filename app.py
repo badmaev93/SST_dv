@@ -848,7 +848,16 @@ def _get_render_context(section, season_type, season_idx, year, clim_period, per
     if vmax_ov == vmin_ov:
         vmax_ov = vmin_ov + 1.0
 
-    result = (field, lat_arr, lon_arr, land_mask, cmap, float(vmin_ov), float(vmax_ov))
+    # ⚡ Bolt: Precompute land-fill operation to prevent redundant calculations per map tile
+    if lat_arr[0] > lat_arr[-1]:
+        lat_inc  = lat_arr[::-1]
+        field_rc = field[::-1]
+        lm_rc    = land_mask[::-1]
+    else:
+        lat_inc, field_rc, lm_rc = lat_arr, field, land_mask
+    field_filled = _fill_land_nans(field_rc, lm_rc)
+
+    result = (field, lat_arr, lon_arr, land_mask, cmap, float(vmin_ov), float(vmax_ov), lat_inc, field_filled)
     _field_render_cache[key] = result
     return result
 
@@ -856,20 +865,11 @@ def _get_render_context(section, season_type, season_idx, year, clim_period, per
 def _render_tile_bytes(field, lat_arr, lon_arr, land_mask,
                         cmap, vmin, vmax,
                         tx_min, ty_min, tx_max, ty_max,
-                        blur: bool = True) -> bytes:
+                        blur: bool = True,
+                        lat_inc: np.ndarray = None,
+                        field_filled: np.ndarray = None) -> bytes:
     from PIL import Image as _PIL, ImageFilter as _IF
     W = H = _TILE_SIZE
-
-    if lat_arr[0] > lat_arr[-1]:
-        lat_inc  = lat_arr[::-1]
-        field_rc = field[::-1]
-        lm_rc    = land_mask[::-1]
-    else:
-        lat_inc  = lat_arr
-        field_rc = field
-        lm_rc    = land_mask
-
-    field_filled = _fill_land_nans(field_rc, lm_rc)
 
     tw = tx_max - tx_min
     th = ty_max - ty_min
@@ -960,12 +960,13 @@ def _get_tile(section, season_type, season_idx, year, clim_period,
         _tile_cache[key] = result
         return result
 
-    field, lat_arr, lon_arr, land_mask, cmap, vmin, vmax = _get_render_context(
+    field, lat_arr, lon_arr, land_mask, cmap, vmin, vmax, lat_inc, field_filled = _get_render_context(
         section, season_type, season_idx, year, clim_period, percentile)
 
     result = _render_tile_bytes(field, lat_arr, lon_arr, land_mask,
                                  cmap, vmin, vmax,
-                                 tx_min, ty_min, tx_max, ty_max, blur)
+                                 tx_min, ty_min, tx_max, ty_max, blur,
+                                 lat_inc, field_filled)
     _tile_cache[key] = result
     return result
 
@@ -1175,19 +1176,14 @@ def api_field(section: str, season_type: str, season_idx: int,
     if season_type not in ("monthly", "ess", "seasonal", "annual"):
         raise HTTPException(400, "Bad season_type")
     try:
-        field, lat_arr, lon_arr, land_mask, cmap, vmin, vmax = _get_render_context(
+        field, lat_arr, lon_arr, land_mask, cmap, vmin, vmax, lat_inc, field_filled = _get_render_context(
             section, season_type, season_idx, year, clim_period, percentile)
 
         if lat_arr[0] > lat_arr[-1]:
-            lat_inc  = lat_arr[::-1]
-            field_rc = field[::-1]
-            lm_rc    = land_mask[::-1]
+            field_filled_export = field_filled[::-1]
         else:
-            lat_inc, field_rc, lm_rc = lat_arr, field, land_mask
-        field_filled = _fill_land_nans(field_rc, lm_rc)
-        if lat_arr[0] > lat_arr[-1]:
-            field_filled = field_filled[::-1]
-        f32 = field_filled.astype(np.float32)
+            field_filled_export = field_filled
+        f32 = field_filled_export.astype(np.float32)
         field_b64 = _b64.b64encode(f32.ravel().tobytes()).decode()
         lat_b64   = _b64.b64encode(lat_arr.astype(np.float32).tobytes()).decode()
         lon_b64   = _b64.b64encode(lon_arr.astype(np.float32).tobytes()).decode()
@@ -1229,16 +1225,11 @@ def api_contours(section: str, season_type: str, season_idx: int,
                         headers={"Cache-Control": "public, max-age=3600"})
     try:
         from PIL import Image as _PIL
-        field, lat_arr, lon_arr, land_mask, cmap, vmin, vmax = _get_render_context(
+        field, lat_arr, lon_arr, land_mask, cmap, vmin, vmax, lat_inc, field_filled = _get_render_context(
             section, season_type, season_idx, year, clim_period, percentile)
 
         from scipy.interpolate import RegularGridInterpolator
         W, H = _COAST_W, _COAST_H
-        if lat_arr[0] > lat_arr[-1]:
-            lat_inc  = lat_arr[::-1]; field_rc = field[::-1]; lm_rc = land_mask[::-1]
-        else:
-            lat_inc, field_rc, lm_rc = lat_arr, field, land_mask
-        field_filled = _fill_land_nans(field_rc, lm_rc)
         dx0, dy0, dx1, dy1 = _MERC_EXTENT
         xs = np.linspace(dx0, dx1, W)
         ys = np.linspace(dy1, dy0, H)
