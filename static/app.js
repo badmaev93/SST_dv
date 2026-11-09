@@ -1260,10 +1260,16 @@ function _applySmoothing() {
 
 // открытие и закрытие панели
 function togglePanel() {
-  document.getElementById("left-panel").classList.toggle("panel-open");
+  const panel = document.getElementById("left-panel");
+  const toggle = document.getElementById("panel-toggle");
+  panel.classList.toggle("panel-open");
+  if (toggle) toggle.setAttribute("aria-expanded", panel.classList.contains("panel-open"));
 }
 function closePanel() {
-  document.getElementById("left-panel").classList.remove("panel-open");
+  const panel = document.getElementById("left-panel");
+  const toggle = document.getElementById("panel-toggle");
+  panel.classList.remove("panel-open");
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
 }
 function _onDocClick(e) {
   const panel  = document.getElementById("left-panel");
