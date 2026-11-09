@@ -5,3 +5,9 @@
 ## 2024-05-18 - Colormap Generation Performance
 **Learning:** The colormap generation in `_make_lut` used nested Python loops and manual linear interpolation. This is slow and scales poorly. Vectorized interpolation with `np.interp` is up to 100x faster and simplifies the code significantly.
 **Action:** When implementing custom linear interpolations across arrays in Python, always look for vectorized numpy alternatives like `np.interp` instead of using Python loops.
+
+## 2024-05-24 - Slippy Map Tiling Overhead
+
+**Learning:** When serving dynamically generated map tiles, functions called per tile that operate on the entire global field (like `_fill_land_nans` using `scipy.ndimage.distance_transform_edt` for the 550x1200 array) introduce severe cumulative overhead, adding seconds to the load time for a set of 50 map tiles.
+
+**Action:** Extract expensive operations that are independent of the tile coordinates out of the per-tile rendering pipeline and memoize them in a context cache function (`_get_render_context`) that is already called per request.
