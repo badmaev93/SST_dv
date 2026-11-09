@@ -87,7 +87,7 @@
 
 <!-- Period selector bar — detail mode, top-right under header -->
 <div id="period-select-bar" class="hidden">
-  <span class="period-bar-lbl">Период</span>
+  <label for="cmp-period-select" class="period-bar-lbl">Период</label>
   <select id="cmp-period-select" class="cmp-hdr-sel" onchange="setCmpPeriod(this.value)"></select>
 </div>
 
@@ -107,7 +107,7 @@
 </div>
 
 <!-- ══ HAMBURGER TOGGLE ══ -->
-<button id="panel-toggle" onclick="togglePanel()" aria-label="Открыть/закрыть панель настроек">
+<button id="panel-toggle" onclick="togglePanel()" aria-label="Открыть/закрыть панель настроек" aria-expanded="false" aria-controls="left-panel">
   <svg width="17" height="13" viewBox="0 0 17 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
     <line x1="0" y1="1"  x2="17" y2="1"/>
     <line x1="0" y1="6.5" x2="17" y2="6.5"/>
@@ -259,8 +259,8 @@
         <label for="invite-email">Email пользователя</label>
         <input id="invite-email" type="email" required placeholder="user@example.com" autocomplete="email"/>
       </div>
-      <div id="invite-error"   class="auth-error   hidden"></div>
-      <div id="invite-success" class="invite-success hidden"></div>
+      <div id="invite-error"   class="auth-error   hidden" role="alert"></div>
+      <div id="invite-success" class="invite-success hidden" role="status"></div>
       <button type="submit" id="invite-submit-btn">Отправить приглашение</button>
       <button type="button" class="invite-cancel-btn" onclick="closeInvite()">Отмена</button>
     </form>
