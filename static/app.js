@@ -1642,8 +1642,25 @@ async function onMapClick(evt) {
 
   const pinSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`;
   const popupEl = document.getElementById("map-popup");
-  document.getElementById("map-popup-content").innerHTML =
-    `<div class="popup-geo">${pinSvg}${coordStr}</div><div class="popup-val-line"><b>${valStr}</b></div>`;
+
+  const contentEl = document.getElementById("map-popup-content");
+  contentEl.innerHTML = ""; // Clear existing content securely
+
+  const geoDiv = document.createElement("div");
+  geoDiv.className = "popup-geo";
+  geoDiv.innerHTML = pinSvg; // Safe, it's just the SVG string defined above
+  const geoText = document.createTextNode(coordStr);
+  geoDiv.appendChild(geoText);
+
+  const valLineDiv = document.createElement("div");
+  valLineDiv.className = "popup-val-line";
+  const valBold = document.createElement("b");
+  valBold.textContent = valStr;
+  valLineDiv.appendChild(valBold);
+
+  contentEl.appendChild(geoDiv);
+  contentEl.appendChild(valLineDiv);
+
   popupEl.style.display = "";
   S.popup.setPosition(evt.coordinate);
 }
@@ -1784,10 +1801,23 @@ async function openTimeseries(clickData) {
       const mn  = Math.min(...valid);
       const mx  = Math.max(...valid);
       const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
-      statsDiv.innerHTML =
-        `<div class="db-stat-row"><span>Параметр</span><span class="db-stat-val">${info.title}</span></div>` +
-        `<div class="db-stat-row"><span>Мин / Макс</span><span class="db-stat-val">${fmtNum(mn)} / ${fmtNum(mx)} ${d.unit}</span></div>` +
-        `<div class="db-stat-row"><span>Среднее</span><span class="db-stat-val">${fmtNum(avg)} ${d.unit}</span></div>`;
+
+      const createStatRow = (label, valText) => {
+        const row = document.createElement("div");
+        row.className = "db-stat-row";
+        const spanLabel = document.createElement("span");
+        spanLabel.textContent = label;
+        const spanVal = document.createElement("span");
+        spanVal.className = "db-stat-val";
+        spanVal.textContent = valText;
+        row.appendChild(spanLabel);
+        row.appendChild(spanVal);
+        return row;
+      };
+
+      statsDiv.appendChild(createStatRow("Параметр", info.title));
+      statsDiv.appendChild(createStatRow("Мин / Макс", `${fmtNum(mn)} / ${fmtNum(mx)} ${d.unit}`));
+      statsDiv.appendChild(createStatRow("Среднее", `${fmtNum(avg)} ${d.unit}`));
     }
     dbBody.appendChild(statsDiv);
 
@@ -1795,7 +1825,14 @@ async function openTimeseries(clickData) {
     _buildMainChart(dbBody, d, info, section, clickData);
 
   } catch (e) {
-    dbBody.innerHTML = `<div class="db-stats"><div class="db-stat-row"><span style="color:#f87171">Ошибка загрузки данных</span></div></div>`;
+    dbBody.innerHTML = "";
+    const errDiv = _elSafe("div", "db-stats");
+    const errRow = _elSafe("div", "db-stat-row");
+    const errSpan = _elSafe("span", "", "Ошибка загрузки данных");
+    errSpan.style.color = "#f87171";
+    errRow.appendChild(errSpan);
+    errDiv.appendChild(errRow);
+    dbBody.appendChild(errDiv);
   }
 }
 
@@ -1803,6 +1840,13 @@ function _el(tag, cls, html = "") {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   if (html) e.innerHTML = html;
+  return e;
+}
+
+function _elSafe(tag, cls, text = "") {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
   return e;
 }
 
@@ -1850,7 +1894,7 @@ function _anomalyBarChart(ctx, labels, values, unit, chartRef) {
 }
 
 function _buildMainChart(parent, d, info, section, clickData) {
-  const titleDiv = _el("div", "db-section-title", info.title);
+  const titleDiv = _elSafe("div", "db-section-title", info.title);
   parent.appendChild(titleDiv);
 
   // столбчатые графики (месячный тренд / R2)
@@ -1946,7 +1990,7 @@ function _buildAnnualWidget(parent, section, clickData, _sec) {
   const ESS_BTN = ["Д–Ф","М–М","И–А","С–Н"];
 
   const titleLabel = _sec === "s7" ? "Годовые аномалии" : "Среднее по годам";
-  parent.appendChild(_el("div", "db-section-title", titleLabel));
+  parent.appendChild(_elSafe("div", "db-section-title", titleLabel));
 
   const selectorDiv = _el("div", "db-annual-selector");
   const allBtns = [];
