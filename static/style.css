@@ -1533,3 +1533,16 @@ html, body {
   .auth-box { padding: 28px 24px 32px; width: calc(100vw - 32px); max-width: 340px; }
   .invite-box { padding: 24px 20px 28px; }
 }
+
+/* Button Spinner Animation */
+.btn-spin-icon {
+  width: 16px; height: 16px;
+  animation: spin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+#auth-btn, #invite-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
