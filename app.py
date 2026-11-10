@@ -875,10 +875,12 @@ def _render_tile_bytes(field, lat_arr, lon_arr, land_mask,
     th = ty_max - ty_min
     xs = np.linspace(tx_min + tw / (2 * W), tx_max - tw / (2 * W), W)
     ys = np.linspace(ty_max - th / (2 * H), ty_min + th / (2 * H), H)
-    xs_g, ys_g = np.meshgrid(xs, ys)
-
     tr = _get_merc2geo()
-    lons_f, lats_f = tr.transform(xs_g.ravel(), ys_g.ravel())
+    # ⚡ Bolt: Transform 1D arrays first, then meshgrid to avoid O(N^2) transform overhead
+    lons_1d, _ = tr.transform(xs, np.zeros_like(xs))
+    _, lats_1d = tr.transform(np.zeros_like(ys), ys)
+    lons_grid, lats_grid = np.meshgrid(lons_1d, lats_1d)
+    lons_f, lats_f = lons_grid.ravel(), lats_grid.ravel()
 
     lon_min = float(lon_arr.min())
     lon_max = float(lon_arr.max())
@@ -1233,10 +1235,13 @@ def api_contours(section: str, season_type: str, season_idx: int,
         dx0, dy0, dx1, dy1 = _MERC_EXTENT
         xs = np.linspace(dx0, dx1, W)
         ys = np.linspace(dy1, dy0, H)
-        xs_g, ys_g = np.meshgrid(xs, ys)
         from pyproj import Transformer as _Tr
         _tr2 = _Tr.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
-        lons_f, lats_f = _tr2.transform(xs_g.ravel(), ys_g.ravel())
+        # ⚡ Bolt: Transform 1D arrays first, then meshgrid to avoid O(N^2) transform overhead
+        lons_1d, _ = _tr2.transform(xs, np.zeros_like(xs))
+        _, lats_1d = _tr2.transform(np.zeros_like(ys), ys)
+        lons_grid, lats_grid = np.meshgrid(lons_1d, lats_1d)
+        lons_f, lats_f = lons_grid.ravel(), lats_grid.ravel()
         lon_min = float(lon_arr.min()); lon_max = float(lon_arr.max())
         lons_n = np.where(lons_f < lon_min, lons_f + 360, lons_f)
         lons_n = np.where(lons_n > lon_max, lons_n - 360, lons_n)
