@@ -49,7 +49,9 @@ async function inviteSubmit(e) {
   const okEl  = document.getElementById("invite-success");
   errEl.classList.add("hidden");
   okEl.classList.add("hidden");
-  btn.disabled = true; btn.textContent = "Создаю…";
+  btn.disabled = true;
+  btn.setAttribute("aria-busy", "true");
+  btn.innerHTML = `<svg class="btn-spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Создаю…`;
   try {
     const r = await apiFetch("/auth/invite", {
       method: "POST",
@@ -65,7 +67,9 @@ async function inviteSubmit(e) {
     errEl.textContent = err.message;
     errEl.classList.remove("hidden");
   } finally {
-    btn.disabled = false; btn.textContent = "Создать приглашение";
+    btn.disabled = false;
+    btn.removeAttribute("aria-busy");
+    btn.textContent = "Отправить приглашение";
   }
 }
 
@@ -74,7 +78,9 @@ async function authSubmit(e) {
   const btn   = document.getElementById("auth-btn");
   const email = document.getElementById("auth-email").value.trim();
   const pass  = document.getElementById("auth-pass").value;
-  btn.disabled = true; btn.textContent = "Вход…";
+  btn.disabled = true;
+  btn.setAttribute("aria-busy", "true");
+  btn.innerHTML = `<svg class="btn-spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Вход…`;
   try {
     const r = await fetch("/auth/login", {
       method: "POST",
@@ -93,7 +99,9 @@ async function authSubmit(e) {
   } catch (err) {
     _showLogin(err.message);
   } finally {
-    btn.disabled = false; btn.textContent = "Войти";
+    btn.disabled = false;
+    btn.removeAttribute("aria-busy");
+    btn.textContent = "Войти";
   }
 }
 

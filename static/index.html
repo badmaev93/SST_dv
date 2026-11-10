@@ -45,15 +45,15 @@
         <option value="s5">Тр. дисп.</option>
       </select>
       <!-- Year badge — only for s7 -->
-      <span id="cmp-year-wrap" class="cmp-hdr-year-wrap hidden" aria-label="Год аномалии">
-        <select id="cmp-year-select" class="cmp-hdr-sel cmp-hdr-year" onchange="setCmpYear(this.value)"></select>
+      <span id="cmp-year-wrap" class="cmp-hdr-year-wrap hidden">
+        <select id="cmp-year-select" class="cmp-hdr-sel cmp-hdr-year" onchange="setCmpYear(this.value)" aria-label="Год аномалии"></select>
       </span>
     </div>
 
     <!-- Meta row: Климат & Осреднение -->
     <div class="cmp-hdr-meta-row">
       <span class="cmp-meta-unit">
-        <span class="cmp-meta-lbl">Климат</span>
+        <label for="cmp-clim-select" class="cmp-meta-lbl">Климат</label>
         <select id="cmp-clim-select" class="cmp-hdr-sel cmp-hdr-clim" onchange="setClim(this.value)">
           <option value="1981_2010">1981–2010</option>
           <option value="1991_2020" selected>1991–2020</option>
@@ -62,7 +62,7 @@
       </span>
       <span class="cmp-meta-dot" aria-hidden="true">·</span>
       <span class="cmp-meta-unit">
-        <span class="cmp-meta-lbl">Осреднение</span>
+        <label for="cmp-avg-select" class="cmp-meta-lbl">Осреднение</label>
         <select id="cmp-avg-select" class="cmp-hdr-sel cmp-hdr-avg" onchange="setAvg(this.value)">
           <option value="monthly">по месяцам</option>
           <option value="ess" selected>Е.С.С.</option>
