@@ -126,67 +126,67 @@
 
   <!-- Settings (expanded by default) -->
   <div class="lp-section open" id="lp-settings">
-    <button class="lp-section-hdr" onclick="toggleLpSection('lp-settings')" aria-expanded="true">
+    <button class="lp-section-hdr" onclick="toggleLpSection('lp-settings')" aria-expanded="true" aria-controls="lp-settings-body">
       <span>Настройки отображения</span>
       <svg class="lp-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
         <path d="M2 3.5L5 7L8 3.5"/>
       </svg>
     </button>
-    <div class="lp-section-body">
+    <div class="lp-section-body" id="lp-settings-body">
 
       <div class="lp-row">
-        <span class="lp-lbl">Береговая линия</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-coast">Береговая линия</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-coast">
           <button class="lp-btn coast-btn active" aria-pressed="true" data-coast="1" onclick="setCoastline(true)">Вкл</button>
           <button class="lp-btn coast-btn" aria-pressed="false"        data-coast="0" onclick="setCoastline(false)">Выкл</button>
         </div>
       </div>
       <div class="lp-row">
-        <span class="lp-lbl">Размытие</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-blur">Размытие</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-blur">
           <button class="lp-btn blur-btn" aria-pressed="false"        data-blur="1" onclick="setBlur(true)">Вкл</button>
           <button class="lp-btn blur-btn active" aria-pressed="true" data-blur="0" onclick="setBlur(false)">Выкл</button>
         </div>
       </div>
       <div class="lp-row">
-        <span class="lp-lbl">Перцентиль</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-pct">Перцентиль</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-pct">
           <button class="lp-btn pct-btn active" aria-pressed="true" data-pct="99"   onclick="setPct('99')">99</button>
           <button class="lp-btn pct-btn" aria-pressed="false"        data-pct="99.9" onclick="setPct('99.9')">99.9</button>
           <button class="lp-btn pct-btn" aria-pressed="false"        data-pct="100"  onclick="setPct('100')">100</button>
         </div>
       </div>
       <div class="lp-row">
-        <span class="lp-lbl">Разрешение PNG</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-scale">Разрешение PNG</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-scale">
           <button class="lp-btn scale-btn" aria-pressed="false"        data-scale="1" onclick="setScale(1)">1×</button>
           <button class="lp-btn scale-btn active" aria-pressed="true" data-scale="2" onclick="setScale(2)">2×</button>
         </div>
       </div>
       <div class="lp-row">
-        <span class="lp-lbl">Изолинии</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-contour">Изолинии</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-contour">
           <button class="lp-btn contour-btn active" aria-pressed="true" data-contour="1" onclick="setContours(true)">Вкл</button>
           <button class="lp-btn contour-btn" aria-pressed="false"        data-contour="0" onclick="setContours(false)">Выкл</button>
         </div>
       </div>
       <div class="lp-row">
-        <span class="lp-lbl">Подписи изолиний</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-contlbl">Подписи изолиний</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-contlbl">
           <button class="lp-btn contlbl-btn" aria-pressed="false"        data-contlbl="1" onclick="setContourLabels(true)">Вкл</button>
           <button class="lp-btn contlbl-btn active" aria-pressed="true" data-contlbl="0" onclick="setContourLabels(false)">Выкл</button>
         </div>
       </div>
       <div class="lp-row">
-        <span class="lp-lbl">Интерполяция</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-smooth">Интерполяция</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-smooth">
           <button class="lp-btn smooth-btn" aria-pressed="false"        data-smooth="1" onclick="setSmooth(true)">Вкл</button>
           <button class="lp-btn smooth-btn active" aria-pressed="true" data-smooth="0" onclick="setSmooth(false)">Выкл</button>
         </div>
       </div>
       <div class="lp-row">
-        <span class="lp-lbl">Гратикль</span>
-        <div class="lp-btns">
+        <span class="lp-lbl" id="lbl-grat">Гратикль</span>
+        <div class="lp-btns" role="group" aria-labelledby="lbl-grat">
           <button class="lp-btn grat-btn active" aria-pressed="true" data-grat="1" onclick="setGraticule(true)">Вкл</button>
           <button class="lp-btn grat-btn" aria-pressed="false"        data-grat="0" onclick="setGraticule(false)">Выкл</button>
         </div>
@@ -212,7 +212,7 @@
 <!-- Map popup -->
 <div id="map-popup" class="ol-popup" style="display:none" role="dialog" aria-label="Значение точки">
   <div id="map-popup-content"></div>
-  <button class="popup-close" id="popup-close-btn" title="Закрыть" aria-label="Закрыть">
+  <button class="popup-close" id="popup-close-btn" title="Закрыть (Esc)" aria-label="Закрыть" aria-keyshortcuts="Escape">
     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
       <path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/>
     </svg>
@@ -223,7 +223,7 @@
 <div id="dashboard" class="hidden" role="complementary" aria-label="Временной ряд">
   <div class="db-header">
     <span id="db-title"></span>
-    <button class="db-close" onclick="closeDashboard()" aria-label="Закрыть панель">
+    <button class="db-close" onclick="closeDashboard()" aria-label="Закрыть панель" title="Закрыть панель (Esc)" aria-keyshortcuts="Escape">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
         <path d="M2 2l8 8M10 2l-8 8"/>
       </svg>
@@ -262,7 +262,7 @@
       <div id="invite-error"   class="auth-error   hidden" role="alert"></div>
       <div id="invite-success" class="invite-success hidden" role="status"></div>
       <button type="submit" id="invite-submit-btn">Отправить приглашение</button>
-      <button type="button" class="invite-cancel-btn" onclick="closeInvite()">Отмена</button>
+      <button type="button" class="invite-cancel-btn" onclick="closeInvite()" title="Отмена (Esc)" aria-keyshortcuts="Escape">Отмена</button>
     </form>
   </div>
 </div>
