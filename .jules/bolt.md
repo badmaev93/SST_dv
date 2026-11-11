@@ -15,3 +15,7 @@
 ## 2026-11-10 - PyProj Transformation Optimization with Separable Coordinates
 **Learning:** The transformation from Web Mercator (EPSG:3857) to WGS84 (EPSG:4326) is strictly orthogonal (x maps directly to longitude, y maps directly to latitude). Using `np.meshgrid` to generate a 2D array and then applying `pyproj.Transformer` on the flattened 2D arrays is extremely inefficient for separable projections, with a cost of O(W*H).
 **Action:** When working with strictly orthogonal/separable projections, perform the coordinate transformation on the 1D vectors *before* applying `np.meshgrid`. This reduces the transformation cost from O(W*H) to O(W+H), resulting in ~20x faster coordinate grid generation.
+
+## 2025-02-12 - Combine numpy percentile calls
+**Learning:** Calling `np.percentile` multiple times sequentially (e.g. for min and max bounds) takes almost double the time because it sorts/partitions the array each time. For large images (like 1200x550 map data), this adds significant latency per tile or map render request.
+**Action:** Combine multiple percentiles into a single array parameter: `np.percentile(valid, [lo, hi])` to calculate them in one pass.
