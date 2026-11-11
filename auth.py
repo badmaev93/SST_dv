@@ -28,16 +28,24 @@ def _verify_pw(pw: str, hashed: str) -> bool:
 _bearer = HTTPBearer(auto_error=False)
 
 _failed: dict = defaultdict(list)  # ip -> [timestamps]
+_locked: dict = {} # ip -> unlock_timestamp
 _MAX_ATTEMPTS = 5
 _WINDOW        = 300   # 5 мин — окно подсчёта
 _LOCKOUT       = 900   # 15 мин — блокировка
 
+# SECURITY: Enforce a strict lockout period to prevent brute-force attacks
 def _check_brute(ip: str):
     now = time.time()
+    if ip in _locked:
+        if now < _locked[ip]:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток. Подождите 15 минут.")
+        else:
+            _locked.pop(ip, None)
+
     _failed[ip] = [t for t in _failed[ip] if now - t < _WINDOW]
     if len(_failed[ip]) >= _MAX_ATTEMPTS:
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
-                            "Слишком много попыток. Подождите 15 минут.")
+        _locked[ip] = now + _LOCKOUT
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток. Подождите 15 минут.")
 
 def _record_fail(ip: str):
     _failed[ip].append(time.time())
@@ -170,7 +178,8 @@ def login(req: LoginReq, request: Request):
     # Use X-Forwarded-For if available to handle proxies
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
-        ip = forwarded.split(",")[0].strip()
+        # SECURITY: Use the right-most IP to prevent spoofing by the client
+        ip = forwarded.split(",")[-1].strip()
 
     _check_brute(ip)
 

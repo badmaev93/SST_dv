@@ -9,3 +9,8 @@ In frameworks like FastAPI, `request.client.host` may just be the proxy's IP. Fu
 
 **Prevention:**
 Always compute a dummy password hash (with the same complexity) if the user isn't found. For rate limiting by IP, prefer to respect `X-Forwarded-For` or use a dedicated rate limiting middleware/service that handles proxy topologies safely.
+
+## 2024-11-11 - IP Spoofing Rate Limit Bypass via X-Forwarded-For
+**Vulnerability:** In `auth.py`, the login rate limiter uses `request.headers.get("X-Forwarded-For").split(",")[0].strip()` to get the client IP.
+**Learning:** `X-Forwarded-For` is a list of IPs. If a proxy appends the real IP, the client can spoof the first IP in the list, effectively rotating their apparent IP and bypassing brute-force protections.
+**Prevention:** Only trust the right-most IPs appended by trusted reverse proxies, or configure the web framework/server to handle trusted proxies natively (e.g., using `ProxyHeadersMiddleware` in Starlette/FastAPI).
