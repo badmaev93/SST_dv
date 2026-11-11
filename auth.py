@@ -167,11 +167,28 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/login")
 def login(req: LoginReq, request: Request):
     ip = request.client.host
+    # Use X-Forwarded-For if available to handle proxies
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        ip = forwarded.split(",")[0].strip()
+
     _check_brute(ip)
+
     user = _get_user(req.email)
-    if not user or not user["active"] or not _verify_pw(req.password, user["pw_hash"]):
+
+    # Timing attack prevention: always compute hash
+    is_valid = False
+    if user and user["active"]:
+        is_valid = _verify_pw(req.password, user["pw_hash"])
+    else:
+        # Compute a dummy hash to match the time of _verify_pw
+        # We need a valid bcrypt hash format for checkpw to actually do the work
+        _verify_pw(req.password, "$2b$12$NqLzOYY1X5tK6XmYg1qY.OyqG/Qo6/V66.Q66Z6q6v.Z66.Z66.Z6")
+
+    if not is_valid:
         _record_fail(ip)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный email или пароль")
+
     _failed.pop(ip, None)
     return {"token": _make_token(req.email, bool(user["is_admin"])), "email": req.email}
 
