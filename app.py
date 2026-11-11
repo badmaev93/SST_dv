@@ -1001,14 +1001,14 @@ def api_meta():
         raise
     except Exception as e:
         logger.error("Failed to load meta.npz: %s", e, exc_info=True)
-        raise HTTPException(500, f"Failed to load meta.npz: {e}")
+        raise HTTPException(500, "Internal server error")
 
     try:
         lat_arr = np.asarray(meta["lat"]).ravel()
         lon_arr = np.asarray(meta["lon"]).ravel()
     except Exception as e:
         logger.error("Cannot read lat/lon from meta: %s", e, exc_info=True)
-        raise HTTPException(500, f"Cannot read lat/lon: {e}")
+        raise HTTPException(500, "Internal server error")
 
     try:
         lon_split_idx = int(np.searchsorted(lon_arr, 180.0))
@@ -1144,7 +1144,7 @@ def api_map_png(section: str, season_type: str, season_idx: int,
         import traceback as _tb
         logger.error("Map error %s/%s/%s half=%s: %s\n%s",
                      section, season_type, season_idx, half, e, _tb.format_exc())
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, "Internal server error")
     return Response(content=png, media_type="image/png",
                     headers={"Cache-Control": "public, max-age=3600"})
 
@@ -1168,7 +1168,7 @@ def api_tile(section: str, season_type: str, season_idx: int,
         import traceback as _tb
         logger.error("Tile error %s/%s/%s z=%d x=%d y=%d: %s\n%s",
                      section, season_type, season_idx, z, x, y, e, _tb.format_exc())
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, "Internal server error")
     return Response(content=tile, media_type="image/webp",
                     headers={"Cache-Control": "public, max-age=3600"})
 
@@ -1216,7 +1216,7 @@ def api_field(section: str, season_type: str, season_idx: int,
         import traceback as _tb
         logger.error("api_field %s/%s/%s: %s\n%s",
                      section, season_type, season_idx, e, _tb.format_exc())
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, "Internal server error")
 
 
 @app.get("/api/contours/{section}/{season_type}/{season_idx}.webp")
@@ -1274,7 +1274,7 @@ def api_contours(section: str, season_type: str, season_idx: int,
         import traceback as _tb
         logger.error("api_contours %s/%s/%s: %s\n%s",
                      section, season_type, season_idx, e, _tb.format_exc())
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, "Internal server error")
 
 
 _coastline_cache: dict = {}
