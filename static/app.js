@@ -954,6 +954,8 @@ async function _loadFieldData() {
 
   const wrap = document.createElement("div");
   wrap.id = "_map_spinner_wrap";
+  wrap.setAttribute("role", "status");
+  wrap.setAttribute("aria-label", "Загрузка карты");
   const wheel = document.createElement("div");
   wheel.id = "_map_spinner_wheel";
   wrap.appendChild(wheel);
@@ -1402,6 +1404,16 @@ async function _buildCompareGrid() {
 
     const cell = document.createElement("div");
     cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    cell.setAttribute("role", "button");
+    cell.tabIndex = 0;
+    cell.setAttribute("aria-label", "Выбрать период: " + lbl);
+
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        cell.click();
+      }
+    };
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";

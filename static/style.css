@@ -963,6 +963,10 @@ html, body {
   box-shadow: 0 5px 20px rgba(27,80,204,0.12), var(--sh-xs);
   transform: translateY(-2px);
 }
+.cmp-cell:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
 .cmp-cell:active { transform: translateY(0) scale(0.995); }
 .cmp-cell.active {
   border-color: var(--ac);
