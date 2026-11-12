@@ -14,3 +14,8 @@ Always compute a dummy password hash (with the same complexity) if the user isn'
 **Vulnerability:** In `auth.py`, the login rate limiter uses `request.headers.get("X-Forwarded-For").split(",")[0].strip()` to get the client IP.
 **Learning:** `X-Forwarded-For` is a list of IPs. If a proxy appends the real IP, the client can spoof the first IP in the list, effectively rotating their apparent IP and bypassing brute-force protections.
 **Prevention:** Only trust the right-most IPs appended by trusted reverse proxies, or configure the web framework/server to handle trusted proxies natively (e.g., using `ProxyHeadersMiddleware` in Starlette/FastAPI).
+
+## 2025-02-14 - JWT tokens in URL Query Parameters
+**Vulnerability:** The application was configured to read JSON Web Tokens (JWT) from the URL via the `?token=` query parameter as a fallback because static image tags (`<img src="...">`) don't naturally support custom HTTP headers like `Authorization`.
+**Learning:** Passing authentication tokens directly in URL query parameters violates security best practices, as URLs are frequently logged in web servers, proxies, and browser histories. This poses a significant credential exposure risk.
+**Prevention:** To fetch authenticated resources without exposing tokens in the URL, use Javascript's `fetch()` API with the `Authorization` header, read the response as a Blob, and set the image element's `src` using `URL.createObjectURL()`. Backend middlewares should solely read tokens from the `Authorization: Bearer` header.

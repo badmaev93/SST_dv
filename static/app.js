@@ -105,9 +105,6 @@ async function authSubmit(e) {
   }
 }
 
-// Token query-param suffix for img/svg src URLs (not fetched via apiFetch)
-function _tk() { const t = _getToken(); return t ? "&token=" + encodeURIComponent(t) : ""; }
-
 // fetch + Bearer + автоматический logout при 401
 async function apiFetch(url, opts = {}) {
   const token = _getToken();
@@ -988,13 +985,28 @@ function refreshMap() {
   _showMapLoading();
 
   // Серверный рендер: PNG полного домена → ImageStatic
-  const url = `/api/map/${section}/${seasonType}/${periodIdx}.png?${params}${_tk()}`;
+  const url = `/api/map/${section}/${seasonType}/${periodIdx}.png?${params}`;
   const src = new ol.source.ImageStatic({
     url,
     imageExtent:  S._imageExtent,   // [x_min,y_min,x_max,y_max] EPSG:3857 домена ERA5
     projection:   "EPSG:3857",
     crossOrigin:  "anonymous",
     interpolate:  true,
+    imageLoadFunction: function(image, src) {
+      apiFetch(src)
+        .then(response => {
+          if (!response.ok) throw new Error("Image fetch failed");
+          return response.blob();
+        })
+        .then(blob => {
+          const objectUrl = URL.createObjectURL(blob);
+          image.getImage().src = objectUrl;
+          image.getImage().onload = () => URL.revokeObjectURL(objectUrl);
+        })
+        .catch(err => {
+          console.error("Failed to load map layer:", err);
+        });
+    }
   });
   let done = false;
   const _onDone = () => { if (!done) { done = true; _hideMapLoading(); } };
@@ -1398,7 +1410,7 @@ async function _buildCompareGrid() {
   }).toString();
 
   labels.forEach((lbl, i) => {
-    const url = `/api/map/${section}/${seasonType}/${i}.png?${thumbParams}${_tk()}`;
+    const url = `/api/map/${section}/${seasonType}/${i}.png?${thumbParams}`;
 
     const cell = document.createElement("div");
     cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
@@ -1413,18 +1425,30 @@ async function _buildCompareGrid() {
     const img = document.createElement("img");
     img.className = "cmp-img";
     img.loading   = "eager";
-    img.src       = url;
     img.alt       = lbl;
     img.style.imageRendering = smooth;
 
+    const fetchAndSetImage = (imgElement, url) => {
+      apiFetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const objectUrl = URL.createObjectURL(blob);
+          imgElement.src = objectUrl;
+          imgElement.onload = () => URL.revokeObjectURL(objectUrl);
+        })
+        .catch(err => console.error("Failed to load compare thumbnail:", err));
+    };
+
+    fetchAndSetImage(img, url);
+
     const grat = document.createElement("img");
     grat.className = "cmp-grat";
-    grat.src       = `/api/graticule.svg?v=${S._serverTs || 1}${_tk()}`;
+    fetchAndSetImage(grat, `/api/graticule.svg?v=${S._serverTs || 1}`);
     grat.alt       = "";
 
     const coast = document.createElement("img");
     coast.className = "cmp-coast";
-    coast.src       = `/api/coastline.svg?v=${S._serverTs || 1}${_tk()}`;
+    fetchAndSetImage(coast, `/api/coastline.svg?v=${S._serverTs || 1}`);
     coast.alt       = "";
     coast.style.display = S.coastline ? "" : "none";
 

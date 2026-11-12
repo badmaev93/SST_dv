@@ -51,8 +51,6 @@ async def _auth_middleware(request, call_next):
         raw_token = None
         if auth_hdr.startswith("Bearer "):
             raw_token = auth_hdr.split(" ", 1)[1]
-        else:
-            raw_token = request.query_params.get("token")
         if not raw_token:
             return JSONResponse({"detail": "Требуется авторизация"}, status_code=401)
         try:
